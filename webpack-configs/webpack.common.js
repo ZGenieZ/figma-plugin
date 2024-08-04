@@ -20,7 +20,7 @@ module.exports = {
       },
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
       {
         test: /\.(png|jpg|gif|webp|svg)$/,
@@ -47,6 +47,7 @@ module.exports = {
       filename: 'ui.html',
       inlineSource: '.(js)$',
       chunks: ['ui'],
+      cache: false,
     }),
     new HtmlWebpackInlineSourcePlugin(HtmlWebpackPlugin),
   ],

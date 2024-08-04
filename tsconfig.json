@@ -5,7 +5,8 @@
     "typeRoots": ["./node_modules/@types", "./node_modules/@figma", "src/@types"],
     "jsx": "react",
     "esModuleInterop": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": ["src/**/*", "@types"]
 }
