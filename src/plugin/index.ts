@@ -1,59 +1,58 @@
 import { isPayloadMessage } from '../ui/lib/figma';
 
+async function addImageToFrame(frame: FrameNode, imageUrl: string) {
+  try {
+    // 이미 이미지가 삽입되어 있으면 중복 삽입되지 않게 리턴
+    if (
+      Array.isArray(frame.fills) &&
+      frame.fills.length > 0 &&
+      frame.fills.some((fill) => fill.type === 'IMAGE')
+    ) {
+      return;
+    }
+
+    const image = await figma.createImageAsync(imageUrl);
+
+    const imageFill: ImagePaint = {
+      type: 'IMAGE',
+      scaleMode: 'FILL',
+      imageHash: image.hash,
+    };
+
+    // eslint-disable-next-line no-param-reassign
+    frame.fills = [imageFill];
+  } catch (error) {
+    figma.notify('이미지를 로드하는데 실패하였습니다.', { error: true });
+  }
+}
+
 figma.showUI(__html__, {
   width: 500,
   height: 400,
   title: 'Kurly Product Design Plugin (프로토타입)',
 });
 
-figma.ui.onmessage = (payload: unknown) => {
+figma.ui.onmessage = async (payload: unknown) => {
   if (isPayloadMessage(payload)) {
-    const { type, data } = payload;
+    const { type, data: imageUrlList } = payload;
 
     if (type === 'randomKurlyProductImage') {
-      const wrapper = figma.createFrame();
-      wrapper.resize(168, 400);
-      wrapper.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-      wrapper.layoutMode = 'VERTICAL';
-      wrapper.itemSpacing = 12;
+      const selectedNodes = figma.currentPage.selection;
 
-      figma.createImageAsync(data).then(async (image: Image) => {
-        const imageNode = figma.createRectangle();
-        // const { width, height } = await image.getSizeAsync();
-        // console.log(width, height);
+      const selectedFrames = selectedNodes.filter(
+        (node) => node.type === 'FRAME',
+      ) as FrameNode[];
 
-        imageNode.resize(168, 218);
-        imageNode.fills = [
-          {
-            type: 'IMAGE',
-            imageHash: image.hash,
-            scaleMode: 'FILL',
-          },
-        ];
+      if (selectedFrames.length === 0) {
+        figma.notify(
+          '프레임이 선택되지 않았습니다. 이미지를 삽입하고 싶은 프레임을 선택해주세요.',
+          { error: true },
+        );
+        return;
+      }
 
-        const rectNode1 = figma.createRectangle();
-        rectNode1.resize(148, 22);
-        rectNode1.fills = [
-          {
-            type: 'SOLID',
-            color: { r: 236 / 255, g: 239 / 255, b: 243 / 255 },
-          },
-        ];
-        rectNode1.cornerRadius = 4;
-
-        const rectNode2 = figma.createRectangle();
-        rectNode2.resize(100, 22);
-        rectNode2.fills = [
-          {
-            type: 'SOLID',
-            color: { r: 236 / 255, g: 239 / 255, b: 243 / 255 },
-          },
-        ];
-        rectNode2.cornerRadius = 4;
-
-        wrapper.appendChild(imageNode);
-        wrapper.appendChild(rectNode1);
-        wrapper.appendChild(rectNode2);
+      selectedFrames.forEach((frame, index) => {
+        addImageToFrame(frame, imageUrlList[index]);
       });
     }
   }

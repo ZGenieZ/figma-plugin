@@ -34,7 +34,7 @@ function App() {
 
       requestToPlugin<any>({
         type: 'randomKurlyProductImage',
-        data: randomProductImageList[0],
+        data: randomProductImageList,
       });
     } catch (error) {
       console.error(error);
