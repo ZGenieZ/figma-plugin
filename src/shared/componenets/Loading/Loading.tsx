@@ -9,7 +9,7 @@ function Loading() {
       loop
       play
       animationData={loadingJson}
-      style={{ width: 30, height: 30 }}
+      style={{ width: 24, height: 24 }}
     />
   );
 }
