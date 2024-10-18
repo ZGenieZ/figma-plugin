@@ -2,13 +2,14 @@ import { isPayloadMessage } from '../ui/lib/figma';
 
 async function addImageToFrame(frame: FrameNode, imageUrl: string) {
   try {
-    // 이미 이미지가 삽입되어 있으면 중복 삽입되지 않게 리턴
+    // 이미 이미지가 삽입되어 있으면 초기화 작업 진행
     if (
       Array.isArray(frame.fills) &&
       frame.fills.length > 0 &&
       frame.fills.some((fill) => fill.type === 'IMAGE')
     ) {
-      return;
+      // eslint-disable-next-line no-param-reassign
+      frame.fills = [];
     }
 
     const image = await figma.createImageAsync(imageUrl);
