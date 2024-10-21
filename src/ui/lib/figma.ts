@@ -1,7 +1,7 @@
 import { PluginMessage } from '../../shared/types';
 
 const requestToPlugin = <T>(pluginMessage: PluginMessage<T>) => {
-  parent.postMessage(
+  window.parent.postMessage(
     {
       pluginMessage,
     },
@@ -9,9 +9,15 @@ const requestToPlugin = <T>(pluginMessage: PluginMessage<T>) => {
   );
 };
 
-const isPayloadMessage = (payload: unknown): payload is PluginMessage<any> =>
+const requestToUI = <T>(pluginMessage: PluginMessage<T>) => {
+  figma.ui.postMessage(pluginMessage);
+};
+
+const isPayloadMessage = (
+  payload: unknown,
+): payload is PluginMessage<unknown> =>
   typeof payload === 'object' &&
   Object.prototype.hasOwnProperty.call(payload, 'type') &&
   Object.prototype.hasOwnProperty.call(payload, 'data');
 
-export { requestToPlugin, isPayloadMessage };
+export { requestToPlugin, requestToUI, isPayloadMessage };

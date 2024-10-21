@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react';
 import './index.css';
 import type { SiteKey } from '../shared/types';
 import { getKurlySearchData } from './api';
-import { SITE_KEY_MAP } from '../shared/constants';
+import { PLUGIN_ACTION, SITE_KEY_MAP } from '../shared/constants';
 import { requestToPlugin } from './lib/figma';
 import { Loading } from '../shared/componenets/Loading/Loading';
 import marketIcon from '../../public/images/market_icon.jpg';
@@ -20,41 +20,62 @@ function App() {
     [],
   );
 
-  const handleSearch = useCallback(
-    (key?: SiteKey) => async () => {
-      const randomIndex = Math.random() < 0.5 ? 0 : 1;
+  const validateHandleSearch = useCallback(
+    (key?: SiteKey) => () => {
       setIsLoading(true);
       setSite(key ?? null);
-      try {
-        const randomSiteKey = key ? null : SITE_KEY_LIST[randomIndex];
-        const result = await getKurlySearchData(
-          randomSiteKey ?? key,
-          randomSiteKey
-            ? getSearchKeyword(randomSiteKey)
-            : getSearchKeyword(key),
-        );
-
-        if (!result) {
-          return;
-        }
-
-        const randomProductImageList = result.data.listSections[0].data.items
-          .map((product) => product.productVerticalMediumUrl)
-          .sort(() => Math.random() - 0.5);
-
-        requestToPlugin<any>({
-          type: 'randomKurlyProductImage',
-          data: randomProductImageList,
-        });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-        setSite(null);
-      }
+      requestToPlugin({
+        type: PLUGIN_ACTION.VALIDATE_FRAME_SELECTED,
+      });
     },
-    [site],
+    [],
   );
+
+  const handleSearch = useCallback(async () => {
+    const randomIndex = Math.random() < 0.5 ? 0 : 1;
+    try {
+      const randomSiteKey = site ? null : SITE_KEY_LIST[randomIndex];
+      const result = await getKurlySearchData(
+        randomSiteKey ?? site,
+        randomSiteKey
+          ? getSearchKeyword(randomSiteKey)
+          : getSearchKeyword(site),
+      );
+
+      if (!result) {
+        return;
+      }
+
+      const randomProductImageList = result.data.listSections[0].data.items
+        .map((product) => product.productVerticalMediumUrl)
+        .sort(() => Math.random() - 0.5);
+
+      requestToPlugin<string[]>({
+        type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_IMAGE,
+        data: randomProductImageList,
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setSite(null);
+    }
+  }, [site]);
+
+  window.onmessage = ({
+    data: {
+      pluginMessage: { type, data: payload },
+    },
+    // eslint-disable-next-line consistent-return
+  }) => {
+    if (type === PLUGIN_ACTION.VALIDATE_FRAME_SELECTED) {
+      if (payload.success) {
+        return handleSearch();
+      }
+      setIsLoading(false);
+      setSite(null);
+    }
+  };
 
   return (
     <div className="flex flex-col justify-between  h-full pt-[24px] px-[12px] pb-[12px]">
@@ -67,7 +88,7 @@ function App() {
                 : 'bg-kurly_purple1 text-white'
             }`}
             type="submit"
-            onClick={handleSearch()}
+            onClick={validateHandleSearch()}
             disabled={isLoading}
           >
             <span className="font-semibold">랜덤으로 삽입하기</span>
@@ -78,7 +99,7 @@ function App() {
                 !isLoading && 'hover:bg-kurly_gray_4'
               }`}
               type="button"
-              onClick={handleSearch(SITE_KEY_MAP.MARKET)}
+              onClick={validateHandleSearch(SITE_KEY_MAP.MARKET)}
               disabled={isLoading}
             >
               {site === SITE_KEY_MAP.MARKET && isLoading ? (
@@ -112,7 +133,7 @@ function App() {
               className={`flex justify-center items-center  border border-kurly_gray_1 rounded-[12px] w-full h-[125px]  ${
                 !isLoading && 'hover:bg-kurly_gray_4'
               }`}
-              onClick={handleSearch(SITE_KEY_MAP.BEAUTY)}
+              onClick={validateHandleSearch(SITE_KEY_MAP.BEAUTY)}
               disabled={isLoading}
             >
               {site === SITE_KEY_MAP.BEAUTY && isLoading ? (
