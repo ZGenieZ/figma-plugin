@@ -47,7 +47,7 @@ module.exports = {
       filename: 'ui.html',
       inlineSource: '.(js)$',
       chunks: ['ui'],
-      cache: false,
+      cache: true,
     }),
     new HtmlWebpackInlineSourcePlugin(HtmlWebpackPlugin),
   ],
