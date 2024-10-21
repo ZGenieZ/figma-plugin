@@ -8,5 +8,5 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "@types"]
+  "include": ["src/**/*", "@types", "src/shared/types/images.d.ts"]
 }

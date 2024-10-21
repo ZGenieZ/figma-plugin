@@ -1,12 +1,7 @@
 import { PluginMessage } from '../../shared/types';
 
 const requestToPlugin = <T>(pluginMessage: PluginMessage<T>) => {
-  window.parent.postMessage(
-    {
-      pluginMessage,
-    },
-    '*',
-  );
+  window.parent.postMessage({ pluginMessage }, '*');
 };
 
 const requestToUI = <T>(pluginMessage: PluginMessage<T>) => {
