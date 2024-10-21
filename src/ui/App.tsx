@@ -25,7 +25,7 @@ function App() {
       setIsLoading(true);
       setSite(key ?? null);
       requestToPlugin({
-        type: PLUGIN_ACTION.VALIDATE_FRAME_SELECTED,
+        type: PLUGIN_ACTION.VALIDATE_NODE_SELECTED,
       });
     },
     [],
@@ -68,7 +68,7 @@ function App() {
     },
     // eslint-disable-next-line consistent-return
   }) => {
-    if (type === PLUGIN_ACTION.VALIDATE_FRAME_SELECTED) {
+    if (type === PLUGIN_ACTION.VALIDATE_NODE_SELECTED) {
       if (payload.success) {
         return handleSearch();
       }
