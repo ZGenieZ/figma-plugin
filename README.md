@@ -3,17 +3,17 @@
 1. 필요한 패키지를 설치하세요
 
 ```bash
-$ yarn install
+$ npm ci
 ```
 
 2. 다음 명령어를 통해 플러그인에 필요한 파일을 빌드하세요.
 
 ```bash
 // 개발자 모드로 작업할 때
-$ yarn watch
+$ npm run watch
 
 // 상용 버전을 빌드할 때
-$ yarn build
+$ npm run build
 ```
 
 ## Figma for plugin development
