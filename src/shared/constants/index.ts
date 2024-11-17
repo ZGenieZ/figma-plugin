@@ -8,4 +8,9 @@ const PLUGIN_ACTION = {
   VALIDATE_NODE_SELECTED: 'validateNodeSelected',
 } as const;
 
-export { SITE_KEY_MAP, PLUGIN_ACTION };
+const NODE_NAME_MAP = {
+  PRODUCT_IMAGE_NODE: 'prdImage',
+  PRODUCT_NAME_NODE: 'prdName',
+} as const;
+
+export { SITE_KEY_MAP, PLUGIN_ACTION, NODE_NAME_MAP };

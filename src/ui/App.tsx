@@ -46,13 +46,16 @@ function App() {
         return;
       }
 
-      const randomProductImageList = result.data.listSections[0].data.items
-        .map((product) => product.productVerticalMediumUrl)
+      const randomProductList = result.data.listSections[0].data.items
+        .map(({ name, productVerticalMediumUrl }) => ({
+          name,
+          imageUrl: productVerticalMediumUrl,
+        }))
         .sort(() => Math.random() - 0.5);
 
       requestToPlugin<string[]>({
         type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_IMAGE,
-        data: randomProductImageList,
+        data: randomProductList,
       });
     } catch (error) {
       console.error(error);
