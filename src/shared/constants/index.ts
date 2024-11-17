@@ -4,7 +4,7 @@ const SITE_KEY_MAP = {
 } as const;
 
 const PLUGIN_ACTION = {
-  RANDOM_KURLY_PRODUCT_IMAGE: 'randomKurlyProductImage',
+  RANDOM_KURLY_PRODUCT_CARD: 'randomKurlyProductCard',
   VALIDATE_NODE_SELECTED: 'validateNodeSelected',
 } as const;
 

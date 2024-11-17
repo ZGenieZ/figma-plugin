@@ -44,54 +44,18 @@ async function addTextToNode(node: TextNode, text: string) {
   node.characters = text;
 }
 
-function findNodesByName(
-  nodeList: ReadonlyArray<SceneNode>,
-  targetName: string,
+function findSiblingNodesByName(
+  rootNode: SceneNode & ChildrenMixin,
+  name: string,
 ) {
   const foundNodes = [];
 
-  nodeList.forEach((node) => {
-    if (node.name === targetName) {
+  function traverse(node: SceneNode & ChildrenMixin) {
+    if (node.name === name) {
       foundNodes.push(node);
     }
 
-    if ('children' in node) {
-      foundNodes.push(...findNodesByName(node.children, targetName));
-    }
-  });
-
-  return foundNodes;
-}
-
-function getSelectedValidNodes(selectedNodes: ReadonlyArray<SceneNode>) {
-  const productImageNodes = findNodesByName(
-    selectedNodes,
-    NODE_NAME_MAP.PRODUCT_IMAGE_NODE,
-  );
-
-  const productNameNodes = findNodesByName(
-    selectedNodes,
-    NODE_NAME_MAP.PRODUCT_NAME_NODE,
-  );
-
-  return [...productImageNodes, ...productNameNodes].filter(
-    (node) =>
-      node !== null &&
-      (node.type === 'FRAME' ||
-        node.type === 'RECTANGLE' ||
-        node.type === 'TEXT'),
-  ) as (FrameNode | RectangleNode | TextNode)[];
-}
-
-function countNodesByName(rootNode: SceneNode & ChildrenMixin, name: string) {
-  let count = 0;
-
-  function traverse(node: SceneNode & ChildrenMixin) {
-    if (node.name === name) {
-      count += 1;
-    }
-
-    if ('children' in node === false || node.children === []) {
+    if (!('children' in node) || node.children === []) {
       return;
     }
 
@@ -99,17 +63,17 @@ function countNodesByName(rootNode: SceneNode & ChildrenMixin, name: string) {
   }
 
   traverse(rootNode);
-  return count;
+  return foundNodes;
 }
 
-function findAllNodesCountByName(
+function findAllNodesByName(
   nodeList: ReadonlyArray<SceneNode>,
   targetName: string,
 ) {
   // 문서 최상위 노드, 개별 페이지 노드는 공통 노드이므로 유효하지 않은 노드로 지정
   const invalidateParentNodes = ['PAGE', 'DOCUMENT'];
+  const foundNodes: SceneNode[] = [];
 
-  let total = 0;
   const visitedNodes = new Set<BaseNode>(); // 이미 탐색한 노드를 중복 탐색하지 않도록 저장
 
   function processNode(node: SceneNode) {
@@ -118,7 +82,9 @@ function findAllNodesCountByName(
     visitedNodes.add(node);
 
     // 현재 노드 및 하위 노드 탐색
-    total += countNodesByName(node as SceneNode & ChildrenMixin, targetName);
+    foundNodes.push(
+      ...findSiblingNodesByName(node as SceneNode & ChildrenMixin, targetName),
+    );
 
     // 상위 계층으로 올라가면서 부모와 형제 노드 탐색
     let currentNode = node.parent;
@@ -132,9 +98,11 @@ function findAllNodesCountByName(
       // 현재 노드가 탐색되지 않았을 경우 Set에 추가 후 현재 노드 및 하위 노드 검색
       if (!visitedNodes.has(currentNode)) {
         visitedNodes.add(currentNode);
-        total += countNodesByName(
-          currentNode as SceneNode & ChildrenMixin,
-          targetName,
+        foundNodes.push(
+          ...findSiblingNodesByName(
+            currentNode as SceneNode & ChildrenMixin,
+            targetName,
+          ),
         );
       }
 
@@ -145,36 +113,70 @@ function findAllNodesCountByName(
   // 선택된 모든 노드 처리
   nodeList.forEach(processNode);
 
-  return total;
+  return foundNodes;
 }
 
-function checkIsNodeSelected(targetNodes: ReadonlyArray<SceneNode>) {
+function getFilteredNodes(selectedNodes: ReadonlyArray<SceneNode>) {
+  return selectedNodes.map((node) => {
+    const targetNode = figma.getNodeById(node.id);
+
+    const productImageNodes = findSiblingNodesByName(
+      targetNode as SceneNode & ChildrenMixin,
+      NODE_NAME_MAP.PRODUCT_IMAGE_NODE,
+    ) as (FrameNode | RectangleNode)[];
+
+    const productNameNodes = findSiblingNodesByName(
+      targetNode as SceneNode & ChildrenMixin,
+      NODE_NAME_MAP.PRODUCT_NAME_NODE,
+    ) as TextNode[];
+
+    return {
+      productImageNode:
+        productImageNodes.length > 0 ? productImageNodes[0] : null,
+      productNameNode: productNameNodes.length > 0 ? productNameNodes[0] : null,
+    };
+  });
+}
+
+function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
   if (targetNodes.length === 0) {
     figma.notify('상품 정보를 삽입하고 싶은 프레임을 선택해주세요.', {
       error: true,
     });
-    return false;
+    return {
+      validateNodes: null,
+      success: false,
+    };
   }
 
-  const productCardNodeCount = findAllNodesCountByName(
+  const productCardNodes = findAllNodesByName(
     targetNodes,
     NODE_NAME_MAP.PRODUCT_CARD_NODE,
   );
 
-  if (productCardNodeCount === 0) {
+  if (productCardNodes.length === 0) {
     figma.notify(
       '프레임을 찾을 수 없어요. 프레임명이 제대로 설정되어 있는지 확인해 주세요.',
       { error: true },
     );
-    return false;
+    return {
+      validateNodes: null,
+      success: false,
+    };
   }
 
-  if (productCardNodeCount > 100) {
+  if (productCardNodes.length > 100) {
     figma.notify('프레임을 100개 이하로 선택해주세요.', { error: true });
-    return false;
+    return {
+      validateNodes: null,
+      success: false,
+    };
   }
 
-  return true;
+  return {
+    validateNodes: productCardNodes,
+    success: true,
+  };
 }
 
 figma.showUI(__html__, {
@@ -185,34 +187,32 @@ figma.showUI(__html__, {
 
 figma.ui.onmessage = async (payload: unknown) => {
   if (isPayloadMessage(payload)) {
-    const { type, data: productList } = payload;
+    const { type, data } = payload;
 
-    if (type === PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_IMAGE) {
-      const selectedNodes = getSelectedValidNodes(figma.currentPage.selection);
-      selectedNodes.forEach((node, index) => {
+    if (type === PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD) {
+      const { randomProductList, validateNodes } = data as {
+        randomProductList: { name: string; imageUrl: string }[];
+        validateNodes: SceneNode[];
+      };
+
+      const filteredNodes = getFilteredNodes(validateNodes);
+
+      filteredNodes.forEach(({ productImageNode, productNameNode }, index) => {
         // 이미지 노드일 때 상품 이미지 삽입
-        if (
-          (node.type === 'FRAME' || node.type === 'RECTANGLE') &&
-          node.name === NODE_NAME_MAP.PRODUCT_IMAGE_NODE
-        ) {
-          addImageToNode(node, productList[index].imageUrl);
+        if (productImageNode) {
+          addImageToNode(productImageNode, randomProductList[index].imageUrl);
         }
 
         // 텍스트 노드일 때 상품명 지정
-        if (
-          node.type === 'TEXT' &&
-          node.name === NODE_NAME_MAP.PRODUCT_NAME_NODE
-        ) {
-          addTextToNode(node, productList[index].name);
+        if (productNameNode) {
+          addTextToNode(productNameNode, randomProductList[index].name);
         }
       });
     }
   } else {
     requestToUI({
       type: PLUGIN_ACTION.VALIDATE_NODE_SELECTED,
-      data: {
-        success: checkIsNodeSelected(figma.currentPage.selection),
-      },
+      data: validateSelectedNodes(figma.currentPage.selection),
     });
   }
 };
