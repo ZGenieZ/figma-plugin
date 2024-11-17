@@ -9,6 +9,7 @@ const PLUGIN_ACTION = {
 } as const;
 
 const NODE_NAME_MAP = {
+  PRODUCT_CARD_NODE: 'prdCard',
   PRODUCT_IMAGE_NODE: 'prdImage',
   PRODUCT_NAME_NODE: 'prdName',
 } as const;
