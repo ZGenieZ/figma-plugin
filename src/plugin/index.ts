@@ -198,8 +198,6 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
   targetNodes.forEach((rootNode: SceneNode & ChildrenMixin) => {
     // 선택한 노드가 prdCard 노드이면 자식인 prdImage, prdName 노드를 탐색해서 id 값과 매칭
     if (rootNode.name === NODE_NAME_MAP.PRODUCT_CARD_NODE) {
-      const childNodeIdMap = new Map<string, string>();
-
       const prdImageNode = findChildrenNodeByName(
         rootNode,
         NODE_NAME_MAP.PRODUCT_IMAGE_NODE,
@@ -210,8 +208,20 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
         NODE_NAME_MAP.PRODUCT_NAME_NODE,
       );
 
-      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_IMAGE_NODE, prdImageNode.id);
-      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
+      if (!prdNameNode && !prdNameNode) {
+        return;
+      }
+
+      const childNodeIdMap = new Map<string, string>();
+
+      if (prdImageNode) {
+        childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_IMAGE_NODE, prdImageNode.id);
+      }
+
+      if (prdNameNode) {
+        childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
+      }
+
       rootNodeIdMap.set(rootNode.id, childNodeIdMap);
       return;
     }
@@ -293,6 +303,7 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
     figma.notify('상품 정보를 삽입하고 싶은 프레임을 선택해주세요.', {
       error: true,
     });
+
     return {
       productCardNodeIdMap: null,
       success: false,
@@ -347,11 +358,22 @@ figma.ui.onmessage = async (payload: unknown) => {
         randomProductList: { name: string; imageUrl: string }[];
       };
 
-      const productCardIdMap = deserializeMap(
-        await figma.clientStorage.getAsync(PRODUCT_CARD_ID_MAP_KEY),
+      const productCardIdMap = await figma.clientStorage.getAsync(
+        PRODUCT_CARD_ID_MAP_KEY,
       );
 
-      Array.from(productCardIdMap)
+      // 스토리지에 productCardIdMap이 존재하지 않는 경우 에러 알림 노출
+      if (!productCardIdMap) {
+        figma.notify(
+          '선택한 프레임 중 유효한 프레임이 존재하지 않아 정상적으로 처리하지 못했습니다. 프레임명이 재대로 설정되어 있는지 확인해 주세요.',
+          { error: true },
+        );
+        return;
+      }
+
+      const productCardIdMapValue = deserializeMap(productCardIdMap);
+
+      Array.from(productCardIdMapValue)
         .map((val) => val[1])
         .forEach((map, index) => {
           const productImageNode = map.get(NODE_NAME_MAP.PRODUCT_IMAGE_NODE);
@@ -373,6 +395,9 @@ figma.ui.onmessage = async (payload: unknown) => {
             );
           }
         });
+
+      // 스토리지 productCardIdMap 초기화
+      await figma.clientStorage.setAsync(PRODUCT_CARD_ID_MAP_KEY, null);
     }
   } else {
     const { success, productCardNodeIdMap } = validateSelectedNodes(
