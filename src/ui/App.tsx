@@ -31,58 +31,54 @@ function App() {
     [],
   );
 
-  const handleSearch = useCallback(
-    async (validateNodes: SceneNode[]) => {
-      const randomIndex = Math.random() < 0.5 ? 0 : 1;
-      try {
-        const randomSiteKey = site ? null : SITE_KEY_LIST[randomIndex];
-        const result = await getKurlySearchData(
-          randomSiteKey ?? site,
-          randomSiteKey
-            ? getSearchKeyword(randomSiteKey)
-            : getSearchKeyword(site),
-        );
+  const handleSearch = useCallback(async () => {
+    const randomIndex = Math.random() < 0.5 ? 0 : 1;
+    try {
+      const randomSiteKey = site ? null : SITE_KEY_LIST[randomIndex];
+      const result = await getKurlySearchData(
+        randomSiteKey ?? site,
+        randomSiteKey
+          ? getSearchKeyword(randomSiteKey)
+          : getSearchKeyword(site),
+      );
 
-        if (!result) {
-          return;
-        }
-
-        const randomProductList = result.data.listSections[0].data.items
-          .map(({ name, productVerticalMediumUrl }) => ({
-            name,
-            imageUrl: productVerticalMediumUrl,
-          }))
-          .sort(() => Math.random() - 0.5);
-
-        requestToPlugin<{
-          randomProductList: { name: string; imageUrl: string }[];
-          validateNodes: SceneNode[];
-        }>({
-          type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD,
-          data: { randomProductList, validateNodes },
-        });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-        setSite(null);
+      if (!result) {
+        return;
       }
-    },
-    [site],
-  );
+
+      const randomProductList = result.data.listSections[0].data.items
+        .map(({ name, productVerticalMediumUrl }) => ({
+          name,
+          imageUrl: productVerticalMediumUrl,
+        }))
+        .sort(() => Math.random() - 0.5);
+
+      requestToPlugin<{
+        randomProductList: { name: string; imageUrl: string }[];
+      }>({
+        type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD,
+        data: { randomProductList },
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setSite(null);
+    }
+  }, [site]);
 
   window.onmessage = ({
     data: {
       pluginMessage: {
         type,
-        data: { success, validateNodes },
+        data: { success },
       },
     },
     // eslint-disable-next-line consistent-return
   }) => {
     if (type === PLUGIN_ACTION.VALIDATE_NODE_SELECTED) {
       if (success) {
-        return handleSearch(validateNodes);
+        return handleSearch();
       }
       setIsLoading(false);
       setSite(null);

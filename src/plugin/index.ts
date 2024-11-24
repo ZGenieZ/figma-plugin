@@ -1,5 +1,10 @@
 import { isPayloadMessage, requestToUI } from '../ui/lib/figma';
-import { NODE_NAME_MAP, PLUGIN_ACTION } from '../shared/constants';
+import {
+  INVALIDATE_NODE_TYPES,
+  NODE_NAME_MAP,
+  PLUGIN_ACTION,
+  PRODUCT_CARD_ID_MAP_KEY,
+} from '../shared/constants';
 
 async function addImageToNode(
   node: FrameNode | RectangleNode,
@@ -44,7 +49,7 @@ async function addTextToNode(node: TextNode, text: string) {
   node.characters = text;
 }
 
-function findSiblingNodesByName(
+function findChildrenNodesByName(
   rootNode: SceneNode & ChildrenMixin,
   name: string,
 ) {
@@ -70,8 +75,6 @@ function findAllNodesByName(
   nodeList: ReadonlyArray<SceneNode>,
   targetName: string,
 ) {
-  // 문서 최상위 노드, 개별 페이지 노드는 공통 노드이므로 유효하지 않은 노드로 지정
-  const invalidateParentNodes = ['PAGE', 'DOCUMENT'];
   const foundNodes: SceneNode[] = [];
 
   const visitedNodes = new Set<BaseNode>(); // 이미 탐색한 노드를 중복 탐색하지 않도록 저장
@@ -83,7 +86,7 @@ function findAllNodesByName(
 
     // 현재 노드 및 하위 노드 탐색
     foundNodes.push(
-      ...findSiblingNodesByName(node as SceneNode & ChildrenMixin, targetName),
+      ...findChildrenNodesByName(node as SceneNode & ChildrenMixin, targetName),
     );
 
     // 상위 계층으로 올라가면서 부모와 형제 노드 탐색
@@ -91,7 +94,7 @@ function findAllNodesByName(
 
     while (currentNode) {
       // 문서 최상위 노드, 개별 페이지 노드는 유효한 노드에 포함되지 않음
-      if (invalidateParentNodes.includes(currentNode.type)) {
+      if (INVALIDATE_NODE_TYPES.includes(currentNode.type)) {
         break;
       }
 
@@ -99,7 +102,7 @@ function findAllNodesByName(
       if (!visitedNodes.has(currentNode)) {
         visitedNodes.add(currentNode);
         foundNodes.push(
-          ...findSiblingNodesByName(
+          ...findChildrenNodesByName(
             currentNode as SceneNode & ChildrenMixin,
             targetName,
           ),
@@ -116,26 +119,173 @@ function findAllNodesByName(
   return foundNodes;
 }
 
-function getFilteredNodes(selectedNodes: ReadonlyArray<SceneNode>) {
-  return selectedNodes.map((node) => {
-    const targetNode = figma.getNodeById(node.id);
+function findParentNodeByName(
+  node: SceneNode & ChildrenMixin,
+  targetName: string,
+) {
+  const currentNode = node.parent;
 
-    const productImageNodes = findSiblingNodesByName(
-      targetNode as SceneNode & ChildrenMixin,
+  if (!currentNode || INVALIDATE_NODE_TYPES.includes(currentNode.type)) {
+    return null;
+  }
+
+  if (currentNode.name === targetName) {
+    return currentNode;
+  }
+
+  return findParentNodeByName(
+    currentNode as SceneNode & ChildrenMixin,
+    targetName,
+  );
+}
+
+function findChildrenNodeByName(
+  node: SceneNode & ChildrenMixin,
+  targetName: string,
+): SceneNode | null {
+  if (node.name === targetName) {
+    return node;
+  }
+
+  let foundNode: SceneNode | null = null;
+
+  if ('children' in node && node.children.length > 0) {
+    node.children.some((child) => {
+      foundNode = findChildrenNodeByName(
+        child as SceneNode & ChildrenMixin,
+        targetName,
+      );
+
+      return foundNode !== null; // 조건에 맞는 값을 찾으면 반복 종료
+    });
+
+    return foundNode;
+  }
+
+  return null;
+}
+
+function serializeMap(map: Map<string, Map<string, string>>): string {
+  // Map<string, Map<string, string>>을 직렬화
+  const objectRepresentation = Object.fromEntries(
+    Array.from(map.entries()).map(([key, innerMap]) => [
+      key,
+      Object.fromEntries(innerMap),
+    ]),
+  );
+
+  return JSON.stringify(objectRepresentation);
+}
+
+function deserializeMap(
+  serializedString: string,
+): Map<string, Map<string, string>> {
+  // JSON 문자열을 객체로 파싱
+  const parsedObject = JSON.parse(serializedString);
+
+  // 객체를 Map<string, Map<string, string>> 형태로 변환
+  return new Map(
+    Object.entries(parsedObject).map(([key, innerObject]) => [
+      key,
+      new Map(Object.entries(innerObject as Record<string, string>)),
+    ]),
+  );
+}
+
+function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
+  const rootNodeIdMap = new Map<string, Map<string, string>>();
+
+  targetNodes.forEach((rootNode: SceneNode & ChildrenMixin) => {
+    // 선택한 노드가 prdCard 노드이면 자식인 prdImage, prdName 노드를 탐색해서 id 값과 매칭
+    if (rootNode.name === NODE_NAME_MAP.PRODUCT_CARD_NODE) {
+      const childNodeIdMap = new Map<string, string>();
+
+      const prdImageNode = findChildrenNodeByName(
+        rootNode,
+        NODE_NAME_MAP.PRODUCT_IMAGE_NODE,
+      );
+
+      const prdNameNode = findChildrenNodeByName(
+        rootNode,
+        NODE_NAME_MAP.PRODUCT_NAME_NODE,
+      );
+
+      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_IMAGE_NODE, prdImageNode.id);
+      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
+      rootNodeIdMap.set(rootNode.id, childNodeIdMap);
+      return;
+    }
+
+    // 선택한 노드가 prdImage 노드거나 prdName 노드일 경우 부모인 prdCard를 탐색해서 id 값과 매칭
+    if (
+      rootNode.name === NODE_NAME_MAP.PRODUCT_IMAGE_NODE ||
+      rootNode.name === NODE_NAME_MAP.PRODUCT_NAME_NODE
+    ) {
+      const prdCardNode = findParentNodeByName(
+        rootNode,
+        NODE_NAME_MAP.PRODUCT_CARD_NODE,
+      );
+
+      if (prdCardNode) {
+        const childNodeIdMap = new Map<string, string>();
+
+        childNodeIdMap.set(rootNode.name, rootNode.id);
+        rootNodeIdMap.set(prdCardNode.id, childNodeIdMap);
+      }
+
+      return;
+    }
+
+    // 선택한 노드가 prdCard 내부에 존재하는지 확인
+    const prdCardNode = findParentNodeByName(
+      rootNode,
+      NODE_NAME_MAP.PRODUCT_CARD_NODE,
+    );
+
+    if (!prdCardNode) {
+      return;
+    }
+
+    // 선택한 노드가 prdCard 내부에 존재할 경우 자식 탐색으로 prdImage, prdName 노드 탐색
+    const prdImageNode = findChildrenNodeByName(
+      rootNode,
       NODE_NAME_MAP.PRODUCT_IMAGE_NODE,
-    ) as (FrameNode | RectangleNode)[];
+    );
 
-    const productNameNodes = findSiblingNodesByName(
-      targetNode as SceneNode & ChildrenMixin,
+    const prdNameNode = findChildrenNodeByName(
+      rootNode,
       NODE_NAME_MAP.PRODUCT_NAME_NODE,
-    ) as TextNode[];
+    );
 
-    return {
-      productImageNode:
-        productImageNodes.length > 0 ? productImageNodes[0] : null,
-      productNameNode: productNameNodes.length > 0 ? productNameNodes[0] : null,
-    };
+    if (!prdImageNode && !prdNameNode) {
+      return;
+    }
+
+    const childNodeIdMap = new Map<string, string>();
+
+    if (prdImageNode) {
+      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_IMAGE_NODE, prdImageNode.id);
+    }
+
+    if (prdNameNode) {
+      childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
+    }
+
+    // 이미 동일한 prdCard 노드 id key로 값이 존재하고 있으면 병합 처리
+    if (rootNodeIdMap.get(prdCardNode.id)) {
+      const oldValue = rootNodeIdMap.get(prdCardNode.id);
+      const newValue = new Map([
+        ...Array.from(oldValue),
+        ...Array.from(childNodeIdMap),
+      ]);
+
+      rootNodeIdMap.set(prdCardNode.id, newValue);
+    } else {
+      rootNodeIdMap.set(prdCardNode.id, childNodeIdMap);
+    }
   });
+
+  return rootNodeIdMap.size === 0 ? null : rootNodeIdMap;
 }
 
 function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
@@ -144,11 +294,12 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
       error: true,
     });
     return {
-      validateNodes: null,
+      productCardNodeIdMap: null,
       success: false,
     };
   }
 
+  // prdCard 이름을 가진 노드들을 탐색
   const productCardNodes = findAllNodesByName(
     targetNodes,
     NODE_NAME_MAP.PRODUCT_CARD_NODE,
@@ -160,7 +311,7 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
       { error: true },
     );
     return {
-      validateNodes: null,
+      productCardNodeIdMap: null,
       success: false,
     };
   }
@@ -168,13 +319,15 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
   if (productCardNodes.length > 100) {
     figma.notify('프레임을 100개 이하로 선택해주세요.', { error: true });
     return {
-      validateNodes: null,
+      productCardNodeIdMap: null,
       success: false,
     };
   }
 
+  const productCardNodeIdMap = setProductCardNodeIdMap(targetNodes);
+
   return {
-    validateNodes: productCardNodes,
+    productCardNodeIdMap,
     success: true,
   };
 }
@@ -190,29 +343,54 @@ figma.ui.onmessage = async (payload: unknown) => {
     const { type, data } = payload;
 
     if (type === PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD) {
-      const { randomProductList, validateNodes } = data as {
+      const { randomProductList } = data as {
         randomProductList: { name: string; imageUrl: string }[];
-        validateNodes: SceneNode[];
       };
 
-      const filteredNodes = getFilteredNodes(validateNodes);
+      const productCardIdMap = deserializeMap(
+        await figma.clientStorage.getAsync(PRODUCT_CARD_ID_MAP_KEY),
+      );
 
-      filteredNodes.forEach(({ productImageNode, productNameNode }, index) => {
-        // 이미지 노드일 때 상품 이미지 삽입
-        if (productImageNode) {
-          addImageToNode(productImageNode, randomProductList[index].imageUrl);
-        }
+      Array.from(productCardIdMap)
+        .map((val) => val[1])
+        .forEach((map, index) => {
+          const productImageNode = map.get(NODE_NAME_MAP.PRODUCT_IMAGE_NODE);
+          const productNameNode = map.get(NODE_NAME_MAP.PRODUCT_NAME_NODE);
 
-        // 텍스트 노드일 때 상품명 지정
-        if (productNameNode) {
-          addTextToNode(productNameNode, randomProductList[index].name);
-        }
-      });
+          // 이미지 노드이고, 상품 이미지 데이터가 존재하면 이미지 삽입
+          if (productImageNode && randomProductList[index]?.imageUrl) {
+            addImageToNode(
+              figma.getNodeById(productImageNode) as FrameNode | RectangleNode,
+              randomProductList[index].imageUrl,
+            );
+          }
+
+          // 텍스트 노드이고, 상품명 데이터가 존재하면 상품명 지정
+          if (productNameNode && randomProductList[index]?.name) {
+            addTextToNode(
+              figma.getNodeById(productNameNode) as TextNode,
+              randomProductList[index].name,
+            );
+          }
+        });
     }
   } else {
+    const { success, productCardNodeIdMap } = validateSelectedNodes(
+      figma.currentPage.selection,
+    );
+
+    if (productCardNodeIdMap !== null) {
+      await figma.clientStorage.setAsync(
+        PRODUCT_CARD_ID_MAP_KEY,
+        serializeMap(productCardNodeIdMap),
+      );
+    }
+
     requestToUI({
       type: PLUGIN_ACTION.VALIDATE_NODE_SELECTED,
-      data: validateSelectedNodes(figma.currentPage.selection),
+      data: {
+        success,
+      },
     });
   }
 };
