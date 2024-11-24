@@ -4,7 +4,7 @@ import './index.css';
 import type { SiteKey } from '../shared/types';
 import { getKurlySearchData } from './api';
 import { PLUGIN_ACTION, SITE_KEY_MAP } from '../shared/constants';
-import { requestToPlugin } from './lib/figma';
+import { requestToPlugin } from '../shared/lib/figma';
 import { Loading } from '../shared/componenets/Loading/Loading';
 import marketIcon from '../../public/images/market_icon.jpg';
 import beautyIcon from '../../public/images/beauty_icon.jpg';
