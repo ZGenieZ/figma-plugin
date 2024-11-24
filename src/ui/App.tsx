@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 
 import './index.css';
 import type { SiteKey } from '../shared/types';
-import { getKurlySearchData } from './api';
+import { getKurlyProductList } from './api';
 import { PLUGIN_ACTION, SITE_KEY_MAP } from '../shared/constants';
 import { requestToPlugin } from '../shared/lib/figma';
 import { Loading } from '../shared/componenets/Loading/Loading';
@@ -35,23 +35,43 @@ function App() {
     const randomIndex = Math.random() < 0.5 ? 0 : 1;
     try {
       const randomSiteKey = site ? null : SITE_KEY_LIST[randomIndex];
-      const result = await getKurlySearchData(
+      const result = await getKurlyProductList(
         randomSiteKey ?? site,
         randomSiteKey
           ? getSearchKeyword(randomSiteKey)
           : getSearchKeyword(site),
+        site === null,
       );
 
       if (!result) {
         return;
       }
 
-      const randomProductList = result.data.listSections[0].data.items
-        .map(({ name, productVerticalMediumUrl }) => ({
-          name,
-          imageUrl: productVerticalMediumUrl,
-        }))
-        .sort(() => Math.random() - 0.5);
+      const { type, data } = result;
+
+      let randomProductList = [];
+
+      if (type === 'SEARCH') {
+        randomProductList = data
+          .map(({ name, productVerticalMediumUrl }) => ({
+            name,
+            imageUrl: productVerticalMediumUrl,
+          }))
+          .sort(() => Math.random() - 0.5);
+      }
+
+      if (type === 'BEST_COLLECTION') {
+        randomProductList = data
+          .map(({ name, product_vertical_medium_url }) => ({
+            name,
+            imageUrl: product_vertical_medium_url,
+          }))
+          .sort(() => Math.random() - 0.5);
+      }
+
+      if (randomProductList.length === 0) {
+        return;
+      }
 
       requestToPlugin<{
         randomProductList: { name: string; imageUrl: string }[];
@@ -116,7 +136,7 @@ function App() {
                     <Loading />
                   </div>
                   <span className="text-gray-400 font-semibold leading-[20px]">
-                    마켓
+                    과일
                   </span>
                 </div>
               ) : (
@@ -124,14 +144,14 @@ function App() {
                   <img
                     className={`w-[40px] ${isLoading && 'opacity-30'}`}
                     src={marketIcon}
-                    alt="마켓_아이콘"
+                    alt="과일_아이콘"
                   />
                   <span
                     className={`${
                       isLoading && 'text-gray-400'
                     } font-semibold leading-[20px]`}
                   >
-                    마켓
+                    과일
                   </span>
                 </div>
               )}
@@ -150,7 +170,7 @@ function App() {
                     <Loading />
                   </div>
                   <span className="text-gray-400 font-semibold leading-[20px]">
-                    뷰티
+                    스킨
                   </span>
                 </div>
               ) : (
@@ -158,14 +178,14 @@ function App() {
                   <img
                     className={`w-[40px] ${isLoading && 'opacity-30'}`}
                     src={beautyIcon}
-                    alt="뷰티_아이콘"
+                    alt="스킨_아이콘"
                   />
                   <span
                     className={`${
                       isLoading && 'text-gray-400'
                     } font-semibold leading-[20px]`}
                   >
-                    뷰티
+                    스킨
                   </span>
                 </div>
               )}

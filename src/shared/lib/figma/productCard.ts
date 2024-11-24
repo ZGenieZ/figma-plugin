@@ -126,7 +126,7 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
     };
   }
 
-  // prdCard 이름을 가진 노드들을 탐색
+  // 선택한 노드들 중 prdCard 이름과 엮인 노드들을 탐색
   const productCardNodes = findAllNodesByName(
     targetNodes,
     NODE_NAME_MAP.PRODUCT_CARD_NODE,

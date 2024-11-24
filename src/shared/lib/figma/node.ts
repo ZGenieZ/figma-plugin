@@ -71,10 +71,11 @@ function findAllNodesByName(
 ) {
   const foundNodes: SceneNode[] = [];
 
-  const visitedNodes = new Set<BaseNode>(); // 이미 탐색한 노드를 중복 탐색하지 않도록 저장
+  // 이미 탐색한 노드를 중복 탐색하지 않도록 저장
+  const visitedNodes = new Set<BaseNode>();
 
-  function processNode(node: SceneNode) {
-    // 이미 탐색한 노드는 건너뛴다
+  function traverse(node: SceneNode) {
+    // 이미 탐색한 노드는 스킵
     if (visitedNodes.has(node)) return;
     visitedNodes.add(node);
 
@@ -108,7 +109,7 @@ function findAllNodesByName(
   }
 
   // 선택된 모든 노드 처리
-  nodeList.forEach(processNode);
+  nodeList.forEach(traverse);
 
   return foundNodes;
 }

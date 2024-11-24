@@ -8,14 +8,20 @@ const kurlyRequest = axios.create({
   baseURL: '',
 });
 
-const getKurlySearchData = async (site: SiteKey, keyword: string) => {
+const getKurlyProductList = async (
+  site: SiteKey,
+  keyword: string,
+  isBestCollection: boolean,
+) => {
   const { data } = await kurlyRequest.get('/searchKurlyProduct', {
     params: {
       site: site === SITE_KEY_MAP.MARKET ? 'market' : 'beauty',
       keyword,
+      isBestCollection,
     },
   });
+
   return data;
 };
 
-export { getKurlySearchData };
+export { getKurlyProductList };
