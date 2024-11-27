@@ -6,8 +6,9 @@ import { getKurlyProductList } from './api';
 import { PLUGIN_ACTION, SITE_KEY_MAP } from '../shared/constants';
 import { requestToPlugin } from '../shared/lib/figma';
 import { Loading } from '../shared/componenets/Loading/Loading';
-import marketIcon from '../../public/images/market_icon.jpg';
-import beautyIcon from '../../public/images/beauty_icon.jpg';
+import fruitIcon from '../../public/images/fruit_icon.png';
+import skinIcon from '../../public/images/skin_icon.png';
+import infoIcon from '../../public/images/info_icon.svg';
 
 const SITE_KEY_LIST = [SITE_KEY_MAP.MARKET, SITE_KEY_MAP.BEAUTY];
 
@@ -106,9 +107,20 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col justify-between  h-full pt-[24px] px-[12px] pb-[12px]">
+    <div className="flex flex-col justify-between h-full px-[16px] pb-[12px]">
       <main>
-        <div className="flex flex-col gap-[16px]">
+        <div className="flex gap-[8px] px-[16px] py-[12px] bg-kurly_gray_4 mx-[-32px] translate-x-[16px]">
+          <img src={infoIcon} alt="정보_아이콘" />
+          <div className="flex justify-center items-center text-kurly_gray_5 text-[12px]">
+            레이어명: 부모프레임&nbsp;
+            <span className="text-kurly_gray_5 font-semibold">prdCard</span>
+            &nbsp;· 상품이미지&nbsp;
+            <span className="text-kurly_gray_5 font-semibold">prdImage</span>
+            &nbsp;· 상품명&nbsp;
+            <span className="text-kurly_gray_5 font-semibold">prdName</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-[16px] mt-[20px]">
           <button
             className={`py-[14px] w-full rounded-[10px] ${
               isLoading
@@ -135,7 +147,7 @@ function App() {
                   <div className="h-[40px] flex items-center">
                     <Loading />
                   </div>
-                  <span className="text-gray-400 font-semibold leading-[20px]">
+                  <span className="text-kurly_gray_6 font-semibold leading-[20px]">
                     과일
                   </span>
                 </div>
@@ -143,14 +155,10 @@ function App() {
                 <div className="flex flex-col gap-[8px]">
                   <img
                     className={`w-[40px] ${isLoading && 'opacity-30'}`}
-                    src={marketIcon}
+                    src={fruitIcon}
                     alt="과일_아이콘"
                   />
-                  <span
-                    className={`${
-                      isLoading && 'text-gray-400'
-                    } font-semibold leading-[20px]`}
-                  >
+                  <span className="text-kurly_black_1 font-semibold leading-[20px]">
                     과일
                   </span>
                 </div>
@@ -169,7 +177,7 @@ function App() {
                   <div className="h-[40px] flex items-center">
                     <Loading />
                   </div>
-                  <span className="text-gray-400 font-semibold leading-[20px]">
+                  <span className="text-kurly_gray_6 font-semibold leading-[20px]">
                     스킨
                   </span>
                 </div>
@@ -177,14 +185,10 @@ function App() {
                 <div className="flex flex-col gap-[8px]">
                   <img
                     className={`w-[40px] ${isLoading && 'opacity-30'}`}
-                    src={beautyIcon}
+                    src={skinIcon}
                     alt="스킨_아이콘"
                   />
-                  <span
-                    className={`${
-                      isLoading && 'text-gray-400'
-                    } font-semibold leading-[20px]`}
-                  >
+                  <span className="text-kurly_black_1 font-semibold leading-[20px]">
                     스킨
                   </span>
                 </div>
@@ -193,17 +197,18 @@ function App() {
           </div>
         </div>
       </main>
-      <footer className="flex justify-between pt-[16px] border-t border-kurly_gray_3">
-        <div className="text-kurly_gray_2 text-[12px]">
+      <footer className="flex justify-between pt-[12px] border-t border-kurly_gray_3">
+        <span className="text-kurly_gray_2 text-[12px]">
           문의 Yang Hwasu · Lee Jinhee
-        </div>
+        </span>
+        {/* TODO: Google Docs 링크로 수정 */}
         <a
-          className="text-kurly_gray_2 text-[12px] hover:underline underline-offset-2"
+          className="text-[#2177D3] text-[12px] hover:underline underline-offset-2"
           href="https://www.kurly.com"
           target="_blank"
           rel="noreferrer"
         >
-          컬리몰
+          의견 보내기
         </a>
       </footer>
     </div>

@@ -1,0 +1,23 @@
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="14" height="14" fill="#F5F5F5"/>
+<g id="Default">
+<rect width="440" height="406" transform="translate(-16 -53)" fill="white"/>
+<g id="info">
+<rect width="440" height="40" transform="translate(-16 -12)" fill="#F2F5F8"/>
+<g id="Icon/Normal/InfoCircle">
+<g id="Shape">
+<g id="Svg" clip-path="url(#clip0_0_1)">
+<path id="Vector (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M6.99998 11.9583C9.73839 11.9583 11.9583 9.73841 11.9583 7C11.9583 4.26159 9.73839 2.04167 6.99998 2.04167C4.26158 2.04167 2.04166 4.26159 2.04166 7C2.04166 9.73841 4.26158 11.9583 6.99998 11.9583ZM13.125 7C13.125 10.3827 10.3827 13.125 6.99998 13.125C3.61725 13.125 0.875 10.3827 0.875 7C0.875 3.61726 3.61725 0.875 6.99998 0.875C10.3827 0.875 13.125 3.61726 13.125 7Z" fill="#848F9A"/>
+<path id="Vector" d="M6.91671 4.45837L6.91671 4.29171L7.08337 4.29171L7.08337 4.45837L6.91671 4.45837Z" stroke="#848F9A"/>
+<path id="Vector_2" d="M7.08337 9.70837L6.91671 9.70837L6.91671 6.62504L7.08337 6.62504L7.08337 9.70837Z" stroke="#848F9A"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_1">
+<rect width="12.25" height="12.25" fill="white" transform="translate(0.875 0.875)"/>
+</clipPath>
+</defs>
+</svg>
