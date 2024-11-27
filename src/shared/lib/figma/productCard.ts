@@ -1,4 +1,8 @@
-import { NODE_NAME_MAP, PRODUCT_CARD_ID_MAP_KEY } from '../../constants';
+import {
+  ERROR_MESSAGE_TIMEOUT,
+  NODE_NAME_MAP,
+  PRODUCT_CARD_ID_MAP_KEY,
+} from '../../constants';
 import {
   addImageToNode,
   addTextToNode,
@@ -24,7 +28,7 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
         NODE_NAME_MAP.PRODUCT_NAME_NODE,
       );
 
-      if (!prdNameNode && !prdNameNode) {
+      if (!prdImageNode && !prdNameNode) {
         return;
       }
 
@@ -118,6 +122,7 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
   if (targetNodes.length === 0) {
     figma.notify('상품 정보를 삽입하고 싶은 프레임을 선택해주세요.', {
       error: true,
+      timeout: ERROR_MESSAGE_TIMEOUT,
     });
 
     return {
@@ -135,7 +140,7 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
   if (productCardNodes.length === 0) {
     figma.notify(
       '프레임을 찾을 수 없어요. 프레임명이 제대로 설정되어 있는지 확인해 주세요.',
-      { error: true },
+      { error: true, timeout: ERROR_MESSAGE_TIMEOUT },
     );
     return {
       productCardNodeIdMap: null,
@@ -144,7 +149,10 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
   }
 
   if (productCardNodes.length > 100) {
-    figma.notify('프레임을 100개 이하로 선택해주세요.', { error: true });
+    figma.notify('프레임을 100개 이하로 선택해주세요.', {
+      error: true,
+      timeout: ERROR_MESSAGE_TIMEOUT,
+    });
     return {
       productCardNodeIdMap: null,
       success: false,
@@ -169,8 +177,8 @@ async function setProductCard(
   // 스토리지에 productCardIdMap이 존재하지 않는 경우 에러 알림 노출
   if (!productCardIdMap) {
     figma.notify(
-      '선택한 프레임 중 유효한 프레임이 존재하지 않아 정상적으로 처리하지 못했습니다. 프레임명이 재대로 설정되어 있는지 확인해 주세요.',
-      { error: true },
+      '프레임을 찾을 수 없어요. 프레임명이 제대로 설정되어 있는지 확인해 주세요.',
+      { error: true, timeout: ERROR_MESSAGE_TIMEOUT },
     );
     return;
   }
