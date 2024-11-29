@@ -1,20 +1,25 @@
 import React, { useCallback, useState } from 'react';
 
-import './index.css';
-import type { SiteKey } from '../shared/types';
-import { getKurlyProductList } from './api';
-import { PLUGIN_ACTION, SITE_KEY_MAP } from '../shared/constants';
+import type { ProductType, SiteKey } from '../shared/types';
+import {
+  PLUGIN_ACTION,
+  PRODUCT_TYPE_MAP,
+  SITE_KEY_MAP,
+} from '../shared/constants';
 import { requestToPlugin } from '../shared/lib/figma';
 import { Loading } from '../shared/componenets/Loading/Loading';
 import fruitIcon from '../../public/images/fruit_icon.png';
 import skinIcon from '../../public/images/skin_icon.png';
 import infoIcon from '../../public/images/info_icon.svg';
+import { getKurlyProductList } from './api';
+import './index.css';
 
 const SITE_KEY_LIST = [SITE_KEY_MAP.MARKET, SITE_KEY_MAP.BEAUTY];
 
 function App() {
   const [site, setSite] = useState<SiteKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [productType, setProductType] = useState<ProductType | null>(null);
 
   const getSearchKeyword = useCallback(
     (key: SiteKey) => (key === SITE_KEY_MAP.MARKET ? '과일' : '스킨'),
@@ -22,9 +27,9 @@ function App() {
   );
 
   const validateHandleSearch = useCallback(
-    (key?: SiteKey) => () => {
-      setIsLoading(true);
+    (type: ProductType, key?: SiteKey) => () => {
       setSite(key ?? null);
+      setProductType(type);
       requestToPlugin({
         type: PLUGIN_ACTION.VALIDATE_NODE_SELECTED,
       });
@@ -32,61 +37,66 @@ function App() {
     [],
   );
 
-  const handleSearch = useCallback(async () => {
-    const randomIndex = Math.random() < 0.5 ? 0 : 1;
-    try {
+  const handleSearch = useCallback(
+    async (type: ProductType) => {
+      setIsLoading(true);
+      const randomIndex = Math.random() < 0.5 ? 0 : 1;
       const randomSiteKey = site ? null : SITE_KEY_LIST[randomIndex];
-      const result = await getKurlyProductList(
-        randomSiteKey ?? site,
-        randomSiteKey
-          ? getSearchKeyword(randomSiteKey)
-          : getSearchKeyword(site),
-        site === null,
-      );
 
-      if (!result) {
-        return;
+      try {
+        const result = await getKurlyProductList(
+          randomSiteKey ?? site,
+          randomSiteKey
+            ? getSearchKeyword(randomSiteKey)
+            : getSearchKeyword(site),
+          type === PRODUCT_TYPE_MAP.BEST_COLLECTION,
+        );
+
+        if (!result) {
+          return;
+        }
+
+        const { type: dataType, data } = result;
+
+        let randomProductList = [];
+
+        if (dataType === PRODUCT_TYPE_MAP.SEARCH) {
+          randomProductList = data
+            .map(({ name, productVerticalMediumUrl }) => ({
+              name,
+              imageUrl: productVerticalMediumUrl,
+            }))
+            .sort(() => Math.random() - 0.5);
+        }
+
+        if (dataType === PRODUCT_TYPE_MAP.BEST_COLLECTION) {
+          randomProductList = data
+            .map(({ name, product_vertical_medium_url }) => ({
+              name,
+              imageUrl: product_vertical_medium_url,
+            }))
+            .sort(() => Math.random() - 0.5);
+        }
+
+        if (randomProductList.length === 0) {
+          return;
+        }
+
+        requestToPlugin<{
+          randomProductList: { name: string; imageUrl: string }[];
+        }>({
+          type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD,
+          data: { randomProductList },
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+        setSite(null);
       }
-
-      const { type, data } = result;
-
-      let randomProductList = [];
-
-      if (type === 'SEARCH') {
-        randomProductList = data
-          .map(({ name, productVerticalMediumUrl }) => ({
-            name,
-            imageUrl: productVerticalMediumUrl,
-          }))
-          .sort(() => Math.random() - 0.5);
-      }
-
-      if (type === 'BEST_COLLECTION') {
-        randomProductList = data
-          .map(({ name, product_vertical_medium_url }) => ({
-            name,
-            imageUrl: product_vertical_medium_url,
-          }))
-          .sort(() => Math.random() - 0.5);
-      }
-
-      if (randomProductList.length === 0) {
-        return;
-      }
-
-      requestToPlugin<{
-        randomProductList: { name: string; imageUrl: string }[];
-      }>({
-        type: PLUGIN_ACTION.RANDOM_KURLY_PRODUCT_CARD,
-        data: { randomProductList },
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-      setSite(null);
-    }
-  }, [site]);
+    },
+    [site],
+  );
 
   window.onmessage = ({
     data: {
@@ -99,10 +109,10 @@ function App() {
   }) => {
     if (type === PLUGIN_ACTION.VALIDATE_NODE_SELECTED) {
       if (success) {
-        return handleSearch();
+        return handleSearch(productType);
       }
-      setIsLoading(false);
       setSite(null);
+      setProductType(null);
     }
   };
 
@@ -128,7 +138,10 @@ function App() {
                 : 'bg-kurly_purple1 text-white'
             }`}
             type="submit"
-            onClick={validateHandleSearch()}
+            onClick={validateHandleSearch(
+              PRODUCT_TYPE_MAP.BEST_COLLECTION,
+              SITE_KEY_MAP.MARKET,
+            )}
             disabled={isLoading}
           >
             <span className="font-semibold">랜덤으로 삽입하기</span>
@@ -139,10 +152,15 @@ function App() {
                 !isLoading && 'hover:bg-kurly_gray_4'
               }`}
               type="button"
-              onClick={validateHandleSearch(SITE_KEY_MAP.MARKET)}
+              onClick={validateHandleSearch(
+                PRODUCT_TYPE_MAP.SEARCH,
+                SITE_KEY_MAP.MARKET,
+              )}
               disabled={isLoading}
             >
-              {site === SITE_KEY_MAP.MARKET && isLoading ? (
+              {site === SITE_KEY_MAP.MARKET &&
+              productType === PRODUCT_TYPE_MAP.SEARCH &&
+              isLoading ? (
                 <div className="flex flex-col gap-[8px]">
                   <div className="h-[40px] flex items-center">
                     <Loading />
@@ -158,7 +176,11 @@ function App() {
                     src={fruitIcon}
                     alt="과일_아이콘"
                   />
-                  <span className="text-kurly_black_1 font-semibold leading-[20px]">
+                  <span
+                    className={`font-semibold leading-[20px] ${
+                      isLoading ? 'text-kurly_gray_6' : 'text-kurly_black_1'
+                    }`}
+                  >
                     과일
                   </span>
                 </div>
@@ -169,10 +191,15 @@ function App() {
               className={`flex justify-center items-center  border border-kurly_gray_1 rounded-[12px] w-full h-[125px]  ${
                 !isLoading && 'hover:bg-kurly_gray_4'
               }`}
-              onClick={validateHandleSearch(SITE_KEY_MAP.BEAUTY)}
+              onClick={validateHandleSearch(
+                PRODUCT_TYPE_MAP.SEARCH,
+                SITE_KEY_MAP.BEAUTY,
+              )}
               disabled={isLoading}
             >
-              {site === SITE_KEY_MAP.BEAUTY && isLoading ? (
+              {site === SITE_KEY_MAP.BEAUTY &&
+              productType === PRODUCT_TYPE_MAP.SEARCH &&
+              isLoading ? (
                 <div className="flex flex-col gap-[8px]">
                   <div className="h-[40px] flex items-center">
                     <Loading />
@@ -188,7 +215,11 @@ function App() {
                     src={skinIcon}
                     alt="스킨_아이콘"
                   />
-                  <span className="text-kurly_black_1 font-semibold leading-[20px]">
+                  <span
+                    className={`font-semibold leading-[20px] ${
+                      isLoading ? 'text-kurly_gray_6' : 'text-kurly_black_1'
+                    }`}
+                  >
                     스킨
                   </span>
                 </div>
@@ -201,10 +232,9 @@ function App() {
         <span className="text-kurly_gray_2 text-[12px]">
           문의 Yang Hwasu · Lee Jinhee
         </span>
-        {/* TODO: Google Docs 링크로 수정 */}
         <a
           className="text-[#2177D3] text-[12px] hover:underline underline-offset-2"
-          href="https://www.kurly.com"
+          href="https://forms.gle/LxQxoFL18crUTgqT7"
           target="_blank"
           rel="noreferrer"
         >
