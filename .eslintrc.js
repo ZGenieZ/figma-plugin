@@ -5,6 +5,7 @@ module.exports = {
     'prettier',
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:@figma/figma-plugins/recommended',
     'plugin:prettier/recommended',
   ],
   plugins: [
