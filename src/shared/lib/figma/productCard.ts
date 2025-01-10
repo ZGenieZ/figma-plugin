@@ -219,18 +219,25 @@ async function setProductCard(
 
       // 이미지 노드이고, 상품 이미지 데이터가 존재하면 이미지 삽입
       if (productImageNode && productList[index]?.imageUrl) {
-        addImageToNode(
-          figma.getNodeById(productImageNode) as FrameNode | RectangleNode,
-          productList[index].imageUrl,
-        );
+        figma
+          .getNodeByIdAsync(productImageNode)
+          .then((node) =>
+            addImageToNode(
+              node as FrameNode | RectangleNode,
+              productList[index].imageUrl,
+            ),
+          )
+          .catch((e) => console.error(e));
       }
 
       // 텍스트 노드이고, 상품명 데이터가 존재하면 상품명 지정
       if (productNameNode && productList[index]?.name) {
-        addTextToNode(
-          figma.getNodeById(productNameNode) as TextNode,
-          productList[index].name,
-        );
+        figma
+          .getNodeByIdAsync(productNameNode)
+          .then((node) =>
+            addTextToNode(node as TextNode, productList[index].name),
+          )
+          .catch((e) => console.error(e));
       }
     });
 

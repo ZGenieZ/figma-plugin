@@ -26,6 +26,7 @@ async function addImageToNode(
     // eslint-disable-next-line no-param-reassign
     node.fills = [imageFill];
   } catch (error) {
+    console.error(error);
     figma.notify('이미지를 로드하는데 실패하였습니다.', { error: true });
   }
 }
@@ -54,7 +55,7 @@ function findChildrenNodesByName(
       foundNodes.push(node);
     }
 
-    if (!('children' in node) || node.children === []) {
+    if (!('children' in node) || node.children.length === 0) {
       return;
     }
 

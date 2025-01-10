@@ -13,7 +13,7 @@ import { PLUGIN_ACTION, PRODUCT_CARD_ID_MAP_KEY } from '../shared/constants';
 figma.showUI(__html__, {
   width: 500,
   height: 400,
-  title: 'Kurly Product Design Plugin (프로토타입)',
+  title: 'Kard',
 });
 
 figma.ui.onmessage = async (payload: unknown) => {

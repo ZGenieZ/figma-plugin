@@ -1,8 +1,13 @@
 {
-  "name": "kurly product design figma plugin",
-  "id": "00000000",
+  "name": "Kard",
+  "id": "1450395300438003713",
   "api": "1.0.0",
   "main": "dist/plugin.js",
   "editorType": ["figma", "figjam"],
-  "ui": "dist/ui.html"
+  "ui": "dist/ui.html",
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "use multiple domains for the API and the UI."
+  },
+  "documentAccess": "dynamic-page"
 }
