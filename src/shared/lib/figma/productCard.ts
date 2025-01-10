@@ -12,6 +12,28 @@ import {
 } from './node';
 import { deserializeMap } from './utils';
 
+function unionProductCardNodeIdMap({
+  rootNodeIdMap,
+  childNodeIdMap,
+  prdCardNodeId,
+}: {
+  rootNodeIdMap: Map<string, Map<string, string>>;
+  childNodeIdMap: Map<string, string>;
+  prdCardNodeId: string;
+}) {
+  // 이미 동일한 prdCard 노드 id key로 값이 존재하고 있으면 병합 처리
+  if (rootNodeIdMap.get(prdCardNodeId)) {
+    const oldValue = rootNodeIdMap.get(prdCardNodeId);
+    const newValue = new Map([
+      ...Array.from(oldValue),
+      ...Array.from(childNodeIdMap),
+    ]);
+    rootNodeIdMap.set(prdCardNodeId, newValue);
+  } else {
+    rootNodeIdMap.set(prdCardNodeId, childNodeIdMap);
+  }
+}
+
 function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
   const rootNodeIdMap = new Map<string, Map<string, string>>();
 
@@ -42,7 +64,11 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
         childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
       }
 
-      rootNodeIdMap.set(rootNode.id, childNodeIdMap);
+      unionProductCardNodeIdMap({
+        rootNodeIdMap,
+        childNodeIdMap,
+        prdCardNodeId: rootNode.id,
+      });
       return;
     }
 
@@ -56,12 +82,19 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
         NODE_NAME_MAP.PRODUCT_CARD_NODE,
       );
 
-      if (prdCardNode) {
-        const childNodeIdMap = new Map<string, string>();
-
-        childNodeIdMap.set(rootNode.name, rootNode.id);
-        rootNodeIdMap.set(prdCardNode.id, childNodeIdMap);
+      if (!prdCardNode) {
+        return;
       }
+
+      const childNodeIdMap = new Map<string, string>();
+
+      childNodeIdMap.set(rootNode.name, rootNode.id);
+
+      unionProductCardNodeIdMap({
+        rootNodeIdMap,
+        childNodeIdMap,
+        prdCardNodeId: prdCardNode.id,
+      });
 
       return;
     }
@@ -101,18 +134,11 @@ function setProductCardNodeIdMap(targetNodes: ReadonlyArray<SceneNode>) {
       childNodeIdMap.set(NODE_NAME_MAP.PRODUCT_NAME_NODE, prdNameNode.id);
     }
 
-    // 이미 동일한 prdCard 노드 id key로 값이 존재하고 있으면 병합 처리
-    if (rootNodeIdMap.get(prdCardNode.id)) {
-      const oldValue = rootNodeIdMap.get(prdCardNode.id);
-      const newValue = new Map([
-        ...Array.from(oldValue),
-        ...Array.from(childNodeIdMap),
-      ]);
-
-      rootNodeIdMap.set(prdCardNode.id, newValue);
-    } else {
-      rootNodeIdMap.set(prdCardNode.id, childNodeIdMap);
-    }
+    unionProductCardNodeIdMap({
+      rootNodeIdMap,
+      childNodeIdMap,
+      prdCardNodeId: prdCardNode.id,
+    });
   });
 
   return rootNodeIdMap.size === 0 ? null : rootNodeIdMap;
