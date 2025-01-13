@@ -2,6 +2,7 @@ import {
   ERROR_MESSAGE_TIMEOUT,
   NODE_NAME_MAP,
   PRODUCT_CARD_ID_MAP_KEY,
+  SELECTED_FRAME_MAX_COUNT,
 } from '../../constants';
 import {
   addImageToNode,
@@ -174,11 +175,14 @@ function validateSelectedNodes(targetNodes: ReadonlyArray<SceneNode>) {
     };
   }
 
-  if (productCardNodes.length > 100) {
-    figma.notify('프레임을 100개 이하로 선택해주세요.', {
-      error: true,
-      timeout: ERROR_MESSAGE_TIMEOUT,
-    });
+  if (productCardNodes.length > SELECTED_FRAME_MAX_COUNT) {
+    figma.notify(
+      `프레임을 ${SELECTED_FRAME_MAX_COUNT}개 이하로 선택해주세요.`,
+      {
+        error: true,
+        timeout: ERROR_MESSAGE_TIMEOUT,
+      },
+    );
     return {
       productCardNodeIdMap: null,
       success: false,
