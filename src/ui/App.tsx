@@ -6,8 +6,8 @@ import {
   PRODUCT_TYPE_MAP,
   SITE_KEY_MAP,
 } from '../shared/constants';
-import { requestToPlugin } from '../shared/lib/figma';
-import { Loading } from '../shared/componenets/Loading/Loading';
+import { requestToPlugin } from '../shared/lib';
+import { Loading } from '../shared/componenets';
 import fruitIcon from '../../public/images/fruit_icon.png';
 import skinIcon from '../../public/images/skin_icon.png';
 import infoIcon from '../../public/images/info_icon.svg';

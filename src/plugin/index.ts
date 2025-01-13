@@ -3,7 +3,7 @@ import {
   isPayloadDataMessage,
   requestToUI,
   serializeMap,
-} from '../shared/lib/figma';
+} from '../shared/lib';
 import {
   setProductCard,
   validateSelectedNodes,
