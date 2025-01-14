@@ -43,7 +43,7 @@ module.exports = {
     },
   },
   output: {
-    filename: '[name].js',
+    filename: '[name].[contenthash].js',
     path: paths.appBuild,
     publicPath: '/',
   },
