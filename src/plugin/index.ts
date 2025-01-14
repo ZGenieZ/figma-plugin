@@ -2,13 +2,13 @@ import {
   isPayloadBaseMessage,
   isPayloadDataMessage,
   requestToUI,
-  serializeMap,
-} from '../shared/lib';
+} from '@/shared/lib/figma/message';
+import { serializeMap } from '@/shared/lib/figma/utils';
 import {
   setProductCard,
   validateSelectedNodes,
-} from '../shared/lib/figma/productCard';
-import { PLUGIN_ACTION, PRODUCT_CARD_ID_MAP_KEY } from '../shared/constants';
+} from '@/shared/lib/figma/productCard';
+import { PLUGIN_ACTION, PRODUCT_CARD_ID_MAP_KEY } from '@/shared/constants';
 
 figma.showUI(__html__, {
   width: 500,

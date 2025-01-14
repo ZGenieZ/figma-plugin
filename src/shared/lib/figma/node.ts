@@ -1,4 +1,4 @@
-import { INVALIDATE_NODE_TYPES } from '../../constants';
+import { INVALIDATE_NODE_TYPES } from '@/shared/constants';
 
 async function addImageToNode(
   node: FrameNode | RectangleNode,

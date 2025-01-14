@@ -3,15 +3,15 @@ import {
   NODE_NAME_MAP,
   PRODUCT_CARD_ID_MAP_KEY,
   SELECTED_FRAME_MAX_COUNT,
-} from '../../constants';
+} from '@/shared/constants';
 import {
   addImageToNode,
   addTextToNode,
   findAllNodesByName,
   findChildrenNodeByName,
   findParentNodeByName,
-} from './node';
-import { deserializeMap } from './utils';
+} from '@/shared/lib/figma/node';
+import { deserializeMap } from '@/shared/lib/figma/utils';
 
 function unionProductCardNodeIdMap({
   rootNodeIdMap,

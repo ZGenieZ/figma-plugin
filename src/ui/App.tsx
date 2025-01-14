@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from 'react';
 
-import type { ProductType, SiteKey } from '../shared/types';
+import type { ProductType, SiteKey } from '@/shared/types';
 import {
   PLUGIN_ACTION,
   PRODUCT_TYPE_MAP,
   SITE_KEY_MAP,
-} from '../shared/constants';
-import { requestToPlugin } from '../shared/lib';
-import { Loading } from '../shared/componenets';
-import fruitIcon from '../../public/images/fruit_icon.png';
-import skinIcon from '../../public/images/skin_icon.png';
-import infoIcon from '../../public/images/info_icon.svg';
-import { getKurlyProductList } from './api';
+} from '@/shared/constants';
+import { requestToPlugin } from '@/shared/lib/figma/message';
+import { Loading } from '@/shared/componenets';
+import fruitIcon from '@/public/images/fruit_icon.png';
+import skinIcon from '@/public/images/skin_icon.png';
+import infoIcon from '@/public/images/info_icon.svg';
+import { getKurlyProductList } from '@/ui/api';
 import './index.css';
 
 const SITE_KEY_LIST = [SITE_KEY_MAP.MARKET, SITE_KEY_MAP.BEAUTY];

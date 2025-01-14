@@ -1,4 +1,8 @@
-import { PLUGIN_ACTION, PRODUCT_TYPE_MAP, SITE_KEY_MAP } from '../constants';
+import {
+  PLUGIN_ACTION,
+  PRODUCT_TYPE_MAP,
+  SITE_KEY_MAP,
+} from '@/shared/constants';
 
 type SiteKey = keyof typeof SITE_KEY_MAP;
 

@@ -1,4 +1,4 @@
-import { PluginMessage } from '../../types';
+import type { PluginMessage } from '@/shared/types';
 
 const requestToPlugin = <T>(pluginMessage: PluginMessage<T>) => {
   window.parent.postMessage({ pluginMessage }, '*');

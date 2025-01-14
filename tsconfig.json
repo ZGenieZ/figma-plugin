@@ -6,7 +6,14 @@
     "jsx": "react",
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/public/*": ["public/*"],
+      "@/plugin/*": ["src/plugin/*"],
+      "@/shared/*": ["src/shared/*"],
+      "@/ui/*": ["src/ui/*"],
+    }
   },
-  "include": ["src/**/*", "@types", "src/shared/types/images.d.ts"]
+  "include": ["src/**/*", "src/shared/types/images.d.ts"]
 }

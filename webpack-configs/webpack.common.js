@@ -1,3 +1,4 @@
+const path = require('path');
 const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
@@ -32,7 +33,15 @@ module.exports = {
       },
     ],
   },
-  resolve: { extensions: ['.tsx', '.ts', '.jsx', '.js'] },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.jsx', '.js'],
+    alias: {
+      '@/public': path.resolve(__dirname, '../public/'),
+      '@/shared': path.resolve(__dirname, '../src/shared/'),
+      '@/plugin': path.resolve(__dirname, '../src/plugin/'),
+      '@/ui': path.resolve(__dirname, '../src/ui/'),
+    },
+  },
   output: {
     filename: '[name].js',
     path: paths.appBuild,

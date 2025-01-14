@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-import { SiteKey } from '../../shared/types';
-import { SITE_KEY_MAP } from '../../shared/constants';
+import type { SiteKey } from '@/shared/types';
+import { SITE_KEY_MAP } from '@/shared/constants';
 
 // TODO: env 사용
 const kurlyRequest = axios.create({
@@ -13,7 +13,7 @@ const getKurlyProductList = async (
   keyword: string,
   isBestCollection: boolean,
 ) => {
-  const { data } = await kurlyRequest.get('/searchKurlyProduct', {
+  const { data } = await kurlyRequest.get('/figma-kard', {
     params: {
       site: site === SITE_KEY_MAP.MARKET ? 'market' : 'beauty',
       keyword,
