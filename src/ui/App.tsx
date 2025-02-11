@@ -2,6 +2,8 @@ import React, { useCallback, useState } from 'react';
 
 import type { ProductType, SiteKey } from '@/shared/types';
 import {
+  BEUATY_SKIN_CATEGORY_ID,
+  MARKET_FRUIT_CATEGORY_ID,
   PLUGIN_ACTION,
   PRODUCT_TYPE_MAP,
   SITE_KEY_MAP,
@@ -21,8 +23,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [productType, setProductType] = useState<ProductType | null>(null);
 
-  const getSearchKeyword = useCallback(
-    (key: SiteKey) => (key === SITE_KEY_MAP.MARKET ? '과일' : '스킨'),
+  const getCategoryId = useCallback(
+    (key: SiteKey) =>
+      key === SITE_KEY_MAP.MARKET
+        ? MARKET_FRUIT_CATEGORY_ID
+        : BEUATY_SKIN_CATEGORY_ID,
     [],
   );
 
@@ -46,9 +51,7 @@ function App() {
       try {
         const result = await getKurlyProductList(
           randomSiteKey ?? site,
-          randomSiteKey
-            ? getSearchKeyword(randomSiteKey)
-            : getSearchKeyword(site),
+          randomSiteKey ? getCategoryId(randomSiteKey) : getCategoryId(site),
           type === PRODUCT_TYPE_MAP.BEST_COLLECTION,
         );
 
@@ -56,27 +59,16 @@ function App() {
           return;
         }
 
-        const { type: dataType, data } = result;
+        const { data } = result;
 
         let randomProductList = [];
 
-        if (dataType === PRODUCT_TYPE_MAP.SEARCH) {
-          randomProductList = data
-            .map(({ name, productVerticalMediumUrl }) => ({
-              name,
-              imageUrl: productVerticalMediumUrl,
-            }))
-            .sort(() => Math.random() - 0.5);
-        }
-
-        if (dataType === PRODUCT_TYPE_MAP.BEST_COLLECTION) {
-          randomProductList = data
-            .map(({ name, product_vertical_medium_url }) => ({
-              name,
-              imageUrl: product_vertical_medium_url,
-            }))
-            .sort(() => Math.random() - 0.5);
-        }
+        randomProductList = data
+          .map(({ name, product_vertical_medium_url }) => ({
+            name,
+            imageUrl: product_vertical_medium_url,
+          }))
+          .sort(() => Math.random() - 0.5);
 
         if (randomProductList.length === 0) {
           return;
@@ -138,10 +130,7 @@ function App() {
                 : 'bg-kurly_purple1 text-white'
             }`}
             type="submit"
-            onClick={validateHandleSearch(
-              PRODUCT_TYPE_MAP.BEST_COLLECTION,
-              SITE_KEY_MAP.MARKET,
-            )}
+            onClick={validateHandleSearch(PRODUCT_TYPE_MAP.BEST_COLLECTION)}
             disabled={isLoading}
           >
             <span className="font-semibold">랜덤으로 삽입하기</span>
@@ -153,13 +142,13 @@ function App() {
               }`}
               type="button"
               onClick={validateHandleSearch(
-                PRODUCT_TYPE_MAP.SEARCH,
+                PRODUCT_TYPE_MAP.CATEGORY,
                 SITE_KEY_MAP.MARKET,
               )}
               disabled={isLoading}
             >
               {site === SITE_KEY_MAP.MARKET &&
-              productType === PRODUCT_TYPE_MAP.SEARCH &&
+              productType === PRODUCT_TYPE_MAP.CATEGORY &&
               isLoading ? (
                 <div className="flex flex-col gap-[8px]">
                   <div className="h-[40px] flex items-center">
@@ -192,13 +181,13 @@ function App() {
                 !isLoading && 'hover:bg-kurly_gray_4'
               }`}
               onClick={validateHandleSearch(
-                PRODUCT_TYPE_MAP.SEARCH,
+                PRODUCT_TYPE_MAP.CATEGORY,
                 SITE_KEY_MAP.BEAUTY,
               )}
               disabled={isLoading}
             >
               {site === SITE_KEY_MAP.BEAUTY &&
-              productType === PRODUCT_TYPE_MAP.SEARCH &&
+              productType === PRODUCT_TYPE_MAP.CATEGORY &&
               isLoading ? (
                 <div className="flex flex-col gap-[8px]">
                   <div className="h-[40px] flex items-center">
