@@ -3,24 +3,25 @@ import axios from 'axios';
 import type { SiteKey } from '@/shared/types';
 import { SITE_KEY_MAP } from '@/shared/constants';
 
-// TODO: env 사용
 const kurlyRequest = axios.create({
-  baseURL: '',
+  baseURL: 'https://figma-api.kurly.services',
 });
 
 const getKurlyProductList = async (
   site: SiteKey,
-  keyword: string,
+  categoryId: number,
   isBestCollection: boolean,
 ) => {
   const { data } = await kurlyRequest.get('/figma-kard', {
     params: {
-      site: site === SITE_KEY_MAP.MARKET ? 'market' : 'beauty',
-      keyword,
+      site:
+        site === SITE_KEY_MAP.MARKET
+          ? SITE_KEY_MAP.MARKET.toLowerCase()
+          : SITE_KEY_MAP.BEAUTY.toLowerCase(),
+      ...(!isBestCollection && { categoryId }),
       isBestCollection,
     },
   });
-
   return data;
 };
 
