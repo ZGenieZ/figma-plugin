@@ -1,0 +1,127 @@
+name: 운영환경 파일을 빌드한다.
+
+jobs:
+  build:
+    runs-on: build-runner
+    steps:
+      - name: 소스코드를 가져온다.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 노드 환경을 구성한다.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: npm 캐시를 설정한다.
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 패키지를 설치한다.
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: release 브랜치 이름과 버전을 추출한다.
+        run: echo "BRANCH_NAME=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+      - run: echo "VERSION=${BRANCH_NAME/release\/}" >> $GITHUB_ENV
+
+      - name: 파일을 빌드한다.
+        run: npm run build
+
+      - name: 빌드 파일 및 manifest 파일을 artifact에 업로드 한다.
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-files
+          path: |
+            ./dist
+            manifest.json
+          retention-days: 1
+    outputs:
+      branch-name: ${{ env.BRANCH_NAME }}
+      version: ${{ env.VERSION }}
+
+  create-release:
+    name: 'Release & Tag 생성'
+    needs: build
+    runs-on: web-runner
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: 아티팩트에 업로드 된 플러그인 관련 파일을 다운로드 한다.
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-files
+          path: .
+          retention-days: 1
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          tag_name: v${{ env.VERSION }}
+          release_name: v${{ env.VERSION }}
+      #          TODO: 릴리즈 노트 링크 수정 필요
+      #          body: |
+      #            ## 릴리즈 노트
+      #            [v${{ env.VERSION }}](https://kurly0521.atlassian.net/wiki/spaces/CMWD/pages/3854275434/Kurlex+-+Release+Note#v${{ env.VERSION }})
+
+      - name: Compress Build Folder
+        run: zip -r figma-kard.zip ./dist manifest.json
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          asset_path: ./figma-kard.zip
+          asset_name: figma-kard-${{ env.VERSION }}.zip
+          asset_content_type: application/zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+  validate-and-create-branch:
+    name: '다음 버전의 release 브랜치가 이미 존재하는지 체크 & 존재하지 않는다면 신규 release 브랜치 생성 (minor version)'
+    needs: [ build, create-release ]
+    runs-on: web-runner
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Extract Next Release Branch Name
+        run: |
+          npm version minor --no-git-tag-version
+          echo NEW_BRANCH_NAME=release/$(npm pkg get version --workspaces=false | tr -d \") >> $GITHUB_ENV
+
+      - id: check_exist_branch
+        name: Check Next Release Version is Already Existed
+        run: |
+          git fetch --quiet
+          remote_release_branch=$(git branch -r --list "origin/$NEW_BRANCH_NAME")
+          if [[ -n "$remote_release_branch" ]]; then
+            echo "::warning::이미 다음 minor 버전 release 브랜치가 존재합니다."
+            echo "::set-output name=skip_new_branch::true"
+            exit 1
+          fi
+
+      - name: Update Package Version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: update package version to $(npm pkg get version --workspaces=false | tr -d \")"
+
+      - name: Push New Version Branch
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.NEW_BRANCH_NAME }}

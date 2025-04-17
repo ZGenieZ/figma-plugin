@@ -8,6 +8,7 @@
   "scripts": {
     "watch": "webpack --mode=development --watch",
     "build": "webpack --mode=production",
+    "build:dev": "webpack --mode=development",
     "update_typings_file": "curl -O https://www.figma.com/plugin-docs/figma.d.ts",
     "lint:fix": "eslint --ext .tsx --ext .ts .",
     "style:write": "prettier --write .",

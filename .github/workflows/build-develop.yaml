@@ -1,0 +1,38 @@
+name: 개발환경 파일을 빌드한다.
+
+jobs:
+  build:
+    runs-on: build-runner
+    steps:
+      - name: 소스코드를 가져온다.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 노드 환경을 구성한다.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: npm 캐시를 설정한다.
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: 패키지를 설치한다.
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: 파일을 빌드한다.
+        run: npm run build:dev
+
+      - name: 빌드 파일 및 manifest 파일을 artifact에 업로드 한다.
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-files
+          path: |
+            ./dist
+            manifest.json
+          retention-days: 1
